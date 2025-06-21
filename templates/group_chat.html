@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-screen w-full flex flex-col bg-dark-900">
+    <!-- Header -->
+    <header class="bg-dark-800 border-b border-dark-700 shadow-sm w-full">
+        <div class="w-full px-6 sm:px-8 lg:px-12 py-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-light-100 tracking-tight">
+                        {{ group.name }}
+                    </h1>
+                    <p class="text-sm text-light-300 mt-1">
+                        Seu ID: <span id="user-id" class="font-semibold text-light-100"></span>
+                    </p>
+                </div>
+                <a href="{{ url_for('groups') }}"
+                   class="inline-flex items-center gap-2 text-sm font-medium text-light-200 hover:text-light-100 transition-colors duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Voltar para Fórum
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main class="flex-1 w-full px-6 sm:px-8 lg:px-12 py-4 flex flex-col overflow-hidden">
+
+        <!-- Messages Container -->
+        <div id="messages-container"
+             class="flex-1 bg-dark-800 rounded-xl border border-dark-700 shadow-lg p-6 mb-4 overflow-y-auto scroll-smooth">
+            {% for message in messages %}
+            <div class="message mb-4 flex {% if message.username == current_user %}justify-end{% else %}justify-start{% endif %}">
+                <div class="{% if message.username == current_user %}bg-accent-neon text-white{% else %}bg-dark-700 text-light-100{% endif %} rounded-xl p-4 max-w-3xl w-full shadow-md">
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <span class="font-semibold">{{ message.username }}</span>
+                        <span class="text-light-300">{{ message.created_at.strftime("%H:%M") }}</span>
+                    </div>
+                    {% if message.content %}
+                    <p class="leading-relaxed break-words">{{ message.content }}</p>
+                    {% endif %}
+                    {% if message.image_path %}
+                    <img src="{{ url_for('static', filename=message.image_path) }}"
+                         alt="Imagem"
+                         class="mt-3 rounded-lg max-h-60 w-full object-contain border border-dark-600">
+                    {% endif %}
+                    <div class="mt-3 flex items-center gap-1">
+                        <button class="like-btn flex items-center gap-1 text-sm {% if message.username == current_user %}text-white hover:text-light-100{% else %}text-light-300 hover:text-light-100{% endif %} transition">
+                            <span class="like-count font-medium">{{ message.likes }}</span>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Message Input -->
+        <form id="message-form"
+              class="bg-dark-800 rounded-xl border border-dark-700 shadow-lg p-4 space-y-3">
+            <input type="hidden" name="username" id="username-input">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex-1">
+                    <input type="text" name="content" required
+                           placeholder="Digite sua mensagem..."
+                           class="w-full rounded-md bg-dark-700 border border-dark-600 p-2 text-light-100 placeholder-light-300 shadow-sm focus:border-accent-neon focus:ring-accent-neon text-sm transition-all duration-200">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="cursor-pointer">
+                        <input type="file" name="image" accept="image/*" class="hidden p-2" id="image-input">
+                        <span class="inline-flex items-center px-3 py-2 rounded-md bg-dark-700 text-light-200 border border-dark-600 hover:bg-dark-600 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    </label>
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-accent-neon text-white text-sm font-medium hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-neon shadow-md transition">
+                        Enviar
+                    </button>
+                </div>
+            </div>
+            <div id="image-preview" class="mt-3 hidden">
+                <img src="" alt="Preview" class="max-h-32 rounded border border-dark-600">
+                <button type="button" id="remove-image"
+                        class="mt-1 text-sm text-accent-neon hover:text-primary transition">Remover imagem</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const socket = io();
+    
+    // Join the group room
+    socket.emit('join_group', { group_id: '{{ group.id }}' });
+    const messagesContainer = document.getElementById('messages-container');
+    const messageForm = document.getElementById('message-form');
+    const imageInput = document.getElementById('image-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewImg = imagePreview.querySelector('img');
+    const removeImageBtn = document.getElementById('remove-image');
+    const usernameInput = document.getElementById('username-input');
+
+    // Auto scroll to bottom
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Handle image preview
+    imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removeImageBtn.addEventListener('click', function() {
+        imageInput.value = '';
+        imagePreview.classList.add('hidden');
+        previewImg.src = '';
+    });
+
+    // Handle message form submission
+    messageForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        formData.append('group_id', '{{ group.id }}');
+
+        try {
+            const response = await fetch('/send_message', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                this.reset();
+                imagePreview.classList.add('hidden');
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao enviar mensagem');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Erro ao enviar mensagem');
+        }
+    });
+
+    // Handle likes
+    document.querySelectorAll('.like-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const messageId = this.getAttribute('data-message-id');
+            const formData = new FormData();
+            formData.append('user_id', usernameInput.value);
+
+            try {
+                const response = await fetch(`/like_message/${messageId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    // Handle like updates
+    socket.on('update_likes', function(data) {
+        const likeBtn = document.querySelector(`.like-btn[data-message-id="${data.message_id}"]`);
+        if (likeBtn) {
+            const likeCount = likeBtn.querySelector('.like-count');
+            likeCount.textContent = data.likes;
+        }
+    });
+
+    // Handle new messages
+    socket.on('new_message', function(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message mb-4 ${message.username === usernameInput.value ? 'ml-auto' : 'mr-auto'}`;
+        
+        let messageContent = `
+            <div class="${message.username === usernameInput.value ? 'bg-accent-neon text-white' : 'bg-dark-700 text-light-100'} rounded-lg p-4 max-w-lg shadow-lg">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-medium">${message.username}</span>
+                    <span class="text-sm opacity-75">${message.created_at}</span>
+                </div>
+        `;
+        
+        if (message.content) {
+            messageContent += `<p class="${message.username === usernameInput.value ? 'text-white' : 'text-light-100'}">${message.content}</p>`;
+        }
+        
+        if (message.image_path) {
+            messageContent += `
+                <img src="${message.image_path}" alt="Imagem" class="mt-2 rounded-lg max-h-60 object-contain">
+            `;
+        }
+
+        messageContent += `
+            <div class="mt-2 flex items-center space-x-2">
+                <button class="like-btn flex items-center space-x-1 text-sm ${message.username === usernameInput.value ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-700'}"
+                        data-message-id="${message.id}">
+                    <span class="like-count">${message.likes || 0}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                    </svg>
+                </button>
+            </div>
+            </div>`;
+        messageDiv.innerHTML = messageContent;
+        
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+    });
+
+    // Handle user registration
+    socket.on('user_registered', function(data) {
+        usernameInput.value = data.username;
+    });
+});
+</script>
+{% endblock %}
