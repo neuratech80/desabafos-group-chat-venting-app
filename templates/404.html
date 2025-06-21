@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-[50vh] flex items-center justify-center">
+    <div class="text-center">
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">404</h2>
+        <p class="text-xl text-gray-600 mb-8">Página não encontrada</p>
+        <a href="{{ url_for('index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-black hover:bg-gray-800">
+            Voltar para página inicial
+        </a>
+    </div>
+</div>
+{% endblock %}
