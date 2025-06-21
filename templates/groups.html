@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-dark-900">
+    <!-- Header -->
+    <header class="bg-dark-800 border-b border-dark-700 shadow-sm">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Fórum</h1>
+            <button id="create-group-btn"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-accent-neon hover:bg-primary shadow-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-neon">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 4v16m8-8H4"></path>
+                </svg>
+                Criar Fórum
+            </button>
+        </div>
+    </header>
+
+    <!-- Create Group Dialog -->
+    <div id="create-group-dialog" class="fixed inset-0 bg-black bg-opacity-75 hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-dark-800 rounded-lg p-8 max-w-md w-full mx-4 border border-dark-700 shadow-lg">
+                <h2 class="text-2xl font-bold mb-4 text-light-100">Criar Novo Fórum</h2>
+                <form id="create-group-form" class="space-y-4">
+                    <div>
+                        <label for="group-name" class="block text-sm font-medium text-light-200">Nome do Fórum</label>
+                        <input type="text" id="group-name" name="name" required
+                               class="mt-1 p-2 block w-full rounded-md bg-dark-700 border-dark-600 text-light-100 placeholder-light-300 shadow-sm focus:border-accent-neon focus:ring-accent-neon sm:text-sm transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="group-image" class="block text-sm font-medium text-light-200">Imagem do Fórum (opcional)</label>
+                        <input type="file" id="group-image" name="image" accept="image/*"
+                               class="mt-1 block w-full text-sm text-light-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-accent-neon file:text-white hover:file:bg-primary transition-all duration-200">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-group"
+                                class="px-4 py-2 border border-dark-600 rounded-md shadow-lg text-sm font-medium text-light-200 bg-dark-700 hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dark-600 transition-all duration-200">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-accent-neon hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-neon transition-all duration-200">
+                            Criar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups List -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="groups-container">
+            {% for group in groups %}
+            <div class="bg-dark-800 overflow-hidden shadow-lg rounded-lg border border-dark-700 hover:border-dark-600 transition-all duration-200">
+                <div class="p-5">
+                    {% if group.image_path %}
+                    <img src="{{ url_for('static', filename=group.image_path) }}" alt="{{ group.name }}" class="w-full h-48 object-cover rounded-lg mb-4">
+                    {% endif %}
+                    <h3 class="text-lg font-medium text-light-100">{{ group.name }}</h3>
+                    <p class="mt-1 text-sm text-light-200">Criado em {{ group.created_at.strftime("%d/%m/%Y") }}</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('group_chat', group_id=group.id) }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-accent-neon hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-neon transition-all duration-200">
+                            Entrar no Fórum
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dialog = document.getElementById('create-group-dialog');
+    const createBtn = document.getElementById('create-group-btn');
+    const cancelBtn = document.getElementById('cancel-create-group');
+    const form = document.getElementById('create-group-form');
+
+    createBtn.addEventListener('click', () => {
+        dialog.classList.remove('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        dialog.classList.add('hidden');
+        form.reset();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch('/create_group', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao criar grupo');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Erro ao criar grupo');
+        }
+    });
+});
+</script>
+{% endblock %}
